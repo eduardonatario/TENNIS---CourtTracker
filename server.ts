@@ -236,7 +236,7 @@ async function startServer() {
 
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`CourtTracker Server running on http://localhost:${PORT}`);
+    console.log(`Tennis Tracker Server running on http://localhost:${PORT}`);
   });
 }
 

@@ -1,4 +1,4 @@
-# CourtTracker — Tennis Motion Analytics
+# Tennis Tracker — Tennis Motion Analytics
 
 Professional tennis performance and motion analysis web application featuring interactive **Apple Watch** & **iPhone (iOS)** companion app simulators, CoreMotion telemetry collection, real-time stroke detection (Forehand, Backhand, Saque), Recharts telemetry dashboards, and session export (CSV/JSON).
 
