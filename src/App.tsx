@@ -130,7 +130,7 @@ function StrokeIcon({ strokeType, size = 36 }: { strokeType: 'Forehand' | 'Backh
       }}
     >
       <img
-        src="/public/assets/aistudio/tennis-icone5_772cd9ff.png"
+        src="./assets/aistudio/tennis-icone5_772cd9ff.png"
         alt={strokeType}
         style={{
           width: '300%',
@@ -161,7 +161,7 @@ function MenuImageIcon({ type, size = 48 }: { type: 'tennis-ball' | 'stats'; siz
       }}
     >
       <img
-        src="/public/assets/aistudio/detectar_e_coletar_dados_ba0d4a09.png"
+        src="./assets/aistudio/detectar_e_coletar_dados_ba0d4a09.png"
         alt={type}
         style={{
           width: '200%',
@@ -177,6 +177,54 @@ function MenuImageIcon({ type, size = 48 }: { type: 'tennis-ball' | 'stats'; siz
   );
 }
 
+interface CaptureGroup {
+  groupId: string;
+  groupTitle: string;
+  startTime: string;
+  captures: TrainingCapture[];
+}
+
+const groupCapturesByThreeHours = (captures: TrainingCapture[]): CaptureGroup[] => {
+  if (captures.length === 0) return [];
+  const sorted = [...captures].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  
+  const groups: CaptureGroup[] = [];
+  let currentGroup: TrainingCapture[] = [];
+  
+  sorted.forEach((cap, idx) => {
+    if (idx === 0) {
+      currentGroup.push(cap);
+    } else {
+      const prevCap = sorted[idx - 1];
+      const diffMs = new Date(prevCap.timestamp).getTime() - new Date(cap.timestamp).getTime();
+      const threeHoursMs = 3 * 60 * 60 * 1000;
+      if (diffMs > threeHoursMs) {
+        groups.push({
+          groupId: `group-${groups.length}-${prevCap.id}`,
+          groupTitle: `Sessão • ${new Date(prevCap.timestamp).toLocaleDateString()} (${currentGroup.length} detecções)`,
+          startTime: prevCap.timestamp,
+          captures: currentGroup
+        });
+        currentGroup = [cap];
+      } else {
+        currentGroup.push(cap);
+      }
+    }
+  });
+
+  if (currentGroup.length > 0) {
+    const lastCap = currentGroup[currentGroup.length - 1];
+    groups.push({
+      groupId: `group-${groups.length}-${lastCap.id}`,
+      groupTitle: `Sessão • ${new Date(lastCap.timestamp).toLocaleDateString()} (${currentGroup.length} detecções)`,
+      startTime: lastCap.timestamp,
+      captures: currentGroup
+    });
+  }
+
+  return groups;
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'simulator' | 'history' | 'integration'>('simulator');
   const [sessions, setSessions] = useState<TennisSession[]>([]);
@@ -188,6 +236,41 @@ export default function App() {
     batteryLevel: 88,
     rssi: -54
   });
+
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ 'group-0': true });
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
+
+  const [isDataCollectionEnabled, setIsDataCollectionEnabled] = useState(() => {
+    const saved = localStorage.getItem('courttracker_data_collection');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('courttracker_data_collection', JSON.stringify(isDataCollectionEnabled));
+  }, [isDataCollectionEnabled]);
+
+  const startNewSession = () => {
+    setMatchTimer(0);
+    setDetectedCounts({
+      Forehand: 0,
+      Backhand: 0,
+      Saque: 0
+    });
+    setLiveDuration(0);
+    setLiveSamples([]);
+    setLiveStrokesCount({
+      Forehand: 0,
+      Backhand: 0,
+      Saque: 0,
+      'Normal Movement': 0
+    });
+    setWatchScreen('splash');
+  };
 
   const [strokeCounts, setStrokeCounts] = useState({
     Forehand: 17,
@@ -498,7 +581,7 @@ export default function App() {
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <img
-                src="/public/assets/aistudio/tennis-icone3-saque_b6af230a.png"
+                src="./assets/aistudio/tennis-icone3-saque_b6af230a.png"
                 alt="App Icon"
                 className="w-11 h-11 rounded-xl object-cover border border-zinc-300 shadow-sm"
               />
@@ -589,7 +672,7 @@ export default function App() {
                       <div className="my-auto flex flex-col items-center justify-center">
                         <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-[#a3e635] shadow-xl shadow-[#a3e635]/20 bg-black flex items-center justify-center">
                           <img
-                            src="/public/assets/aistudio/tennis-icone3-saque_b6af230a.png"
+                            src="./assets/aistudio/tennis-icone3-saque_b6af230a.png"
                             alt="Tennis Saque Icon"
                             className="w-full h-full object-cover"
                           />
@@ -597,7 +680,7 @@ export default function App() {
                       </div>
 
                       <button
-                        onClick={() => setWatchScreen('main-menu')}
+                        onClick={() => setWatchScreen(isDataCollectionEnabled ? 'main-menu' : 'playing')}
                         className="w-full py-4 bg-[#a3e635] hover:bg-[#8cc62d] text-slate-950 rounded-full font-black text-base uppercase tracking-wider shadow-lg shadow-[#a3e635]/30 transition-all active:scale-95"
                       >
                         INICIAR
@@ -620,16 +703,18 @@ export default function App() {
                       </div>
 
                       <div className="flex-1 flex flex-col justify-center space-y-4 py-2">
-                        <button
-                          onClick={() => setWatchScreen('strokes-menu')}
-                          className="w-full h-24 bg-white hover:bg-zinc-100 text-slate-950 rounded-3xl p-4 flex items-center space-x-4 text-left transition-all active:scale-95 shadow-md"
-                        >
-                          <MenuImageIcon type="stats" size={48} />
-                          <div>
-                            <div className="text-base font-black text-slate-950 uppercase tracking-tight">COLETAR DADOS</div>
-                            <div className="text-[10px] text-slate-600 font-semibold uppercase mt-0.5">Treinamento ML</div>
-                          </div>
-                        </button>
+                        {isDataCollectionEnabled && (
+                          <button
+                            onClick={() => setWatchScreen('strokes-menu')}
+                            className="w-full h-24 bg-white hover:bg-zinc-100 text-slate-950 rounded-3xl p-4 flex items-center space-x-4 text-left transition-all active:scale-95 shadow-md"
+                          >
+                            <MenuImageIcon type="stats" size={48} />
+                            <div>
+                              <div className="text-base font-black text-slate-950 uppercase tracking-tight">COLETAR DADOS</div>
+                              <div className="text-[10px] text-slate-600 font-semibold uppercase mt-0.5">Treinamento ML</div>
+                            </div>
+                          </button>
+                        )}
 
                         <button
                           onClick={() => setWatchScreen('playing')}
@@ -737,13 +822,17 @@ export default function App() {
                   {watchScreen === 'playing' && (
                     <div className="flex flex-col h-full justify-between py-1 no-scrollbar overflow-hidden">
                       <div className="flex items-center justify-between pb-1.5 border-b border-zinc-800">
-                        <button
-                          onClick={() => setWatchScreen('main-menu')}
-                          className="w-7 h-7 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-md transition-all"
-                          title="Fechar"
-                        >
-                          <X className="w-4 h-4 stroke-[3]" />
-                        </button>
+                        {isDataCollectionEnabled ? (
+                          <button
+                            onClick={() => setWatchScreen('main-menu')}
+                            className="w-7 h-7 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-md transition-all"
+                            title="Fechar"
+                          >
+                            <X className="w-4 h-4 stroke-[3]" />
+                          </button>
+                        ) : (
+                          <div />
+                        )}
                         <span className="text-[10px] text-emerald-400 font-mono font-black animate-pulse">● DETECTANDO</span>
                       </div>
 
@@ -770,7 +859,7 @@ export default function App() {
                       </div>
 
                       <button
-                        onClick={() => setWatchScreen('main-menu')}
+                        onClick={() => setWatchScreen(isDataCollectionEnabled ? 'main-menu' : 'splash')}
                         className="w-full py-3 rounded-full font-black text-xs uppercase tracking-wider shadow-lg animate-[pulse_3s_infinite] bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-600"
                       >
                         FINALIZAR PARTIDA
@@ -797,7 +886,7 @@ export default function App() {
                   <div className="pt-6 pb-3 border-b border-zinc-200 flex items-center justify-between">
                     <div className="flex items-center space-x-2.5">
                       <img
-                        src="/public/assets/aistudio/tennis-icone3-saque_b6af230a.png"
+                        src="./assets/aistudio/tennis-icone3-saque_b6af230a.png"
                         alt="iPhone App Icon"
                         className="w-9 h-9 rounded-xl object-cover border border-zinc-300 shadow-xs"
                       />
@@ -812,6 +901,38 @@ export default function App() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 py-3">
+                    <div className="bg-slate-50 border border-zinc-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                          <Activity className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-slate-900">Coleta de Dados no Watch</div>
+                          <div className="text-[10px] text-slate-500">Ativar menu de treino</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setIsDataCollectionEnabled(!isDataCollectionEnabled)}
+                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
+                          isDataCollectionEnabled ? 'bg-emerald-600' : 'bg-zinc-300'
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                            isDataCollectionEnabled ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={startNewSession}
+                      className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all active:scale-95 flex items-center justify-center space-x-2"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Iniciar Nova Sessão</span>
+                    </button>
+
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-slate-50 border border-zinc-200 rounded-xl p-2.5 text-center">
                         <div className="text-[10px] text-slate-500 font-bold">TOTAL</div>
@@ -836,27 +957,58 @@ export default function App() {
                       </div>
 
                       <div className="space-y-2 no-scrollbar">
-                        {trainingCaptures.map(cap => (
-                          <div key={cap.id} className="bg-slate-50 border border-zinc-200 rounded-xl p-3 flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <StrokeIcon strokeType={cap.strokeType} size={38} />
-                              <div>
-                                <div className="flex items-center space-x-1.5">
-                                  <span className="text-sm font-black text-slate-900">{cap.strokeType}</span>
-                                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-mono font-bold">
-                                    #{cap.attemptNumber}
-                                  </span>
+                        {groupCapturesByThreeHours(trainingCaptures).map((group, groupIdx) => {
+                          const isExpanded = expandedGroups[group.groupId] ?? (groupIdx === 0);
+                          return (
+                            <div key={group.groupId} className="bg-slate-50 border border-zinc-200 rounded-2xl overflow-hidden shadow-xs">
+                              <button
+                                onClick={() => toggleGroup(group.groupId)}
+                                className="w-full p-3 flex items-center justify-between bg-slate-100/90 hover:bg-slate-100 text-left transition-all"
+                              >
+                                <div className="flex items-center space-x-2.5">
+                                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-700 flex items-center justify-center font-black text-xs shrink-0">
+                                    {group.captures.length}
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-black text-slate-900">{group.groupTitle}</div>
+                                    <div className="text-[10px] text-slate-500 font-mono">
+                                      {new Date(group.startTime).toLocaleString()} • Toque para colapsar
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                                  {cap.samplesCount} amostras • {cap.peakForce}G
+                                <span className={`text-xs font-bold text-slate-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                                  ▼
+                                </span>
+                              </button>
+
+                              {isExpanded && (
+                                <div className="divide-y divide-zinc-200 p-2 space-y-1.5 bg-white">
+                                  {group.captures.map(cap => (
+                                    <div key={cap.id} className="p-2.5 flex items-center justify-between rounded-xl hover:bg-slate-50">
+                                      <div className="flex items-center space-x-3">
+                                        <StrokeIcon strokeType={cap.strokeType} size={34} />
+                                        <div>
+                                          <div className="flex items-center space-x-1.5">
+                                            <span className="text-xs font-black text-slate-900">{cap.strokeType}</span>
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-mono font-bold">
+                                              #{cap.attemptNumber}
+                                            </span>
+                                          </div>
+                                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                            {new Date(cap.timestamp).toLocaleString()} • {cap.peakForce}G
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                                        {cap.status}
+                                      </span>
+                                    </div>
+                                  ))}
                                 </div>
-                              </div>
+                              )}
                             </div>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
-                              {cap.status}
-                            </span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
