@@ -745,7 +745,7 @@ export default function App() {
                       </div>
 
                       <div className="py-2 text-center">
-                        <div className="text-sm font-black text-white uppercase tracking-wider">QUAL MOVIMENTO COLETAR?</div>
+                        <div className="text-lg font-black text-white uppercase tracking-wider">QUAL MOVIMENTO COLETAR?</div>
                       </div>
 
                       <div className="flex-1 flex flex-col justify-center space-y-3 no-scrollbar overflow-hidden py-1">
@@ -759,8 +759,8 @@ export default function App() {
                             onClick={() => startCollection(item.key as any)}
                             className={`w-full px-5 py-4 rounded-full flex items-center justify-between shadow-lg transition-all active:scale-95 ${item.bg}`}
                           >
-                            <span className="text-xl font-black tracking-tight">{item.label}</span>
-                            <span className="text-2xl font-mono font-black">{item.count}</span>
+                            <span className="text-2xl font-black tracking-tight">{item.label}</span>
+                            <span className="text-4xl font-mono font-black">{item.count}</span>
                           </button>
                         ))}
                       </div>
@@ -838,8 +838,8 @@ export default function App() {
 
                       {/* TEMPO DE PARTIDA: timer */}
                       <div className="pt-2 text-center flex items-center justify-center space-x-2">
-                        <span className="text-base font-black text-white uppercase tracking-tight">TEMPO DE PARTIDA:</span>
-                        <span className="text-base font-black text-white">{formatDuration(matchTimer)}</span>
+                        <span className="text-lg font-black text-white uppercase tracking-tight">TEMPO DE PARTIDA:</span>
+                        <span className="text-lg font-black text-white">{formatDuration(matchTimer)}</span>
                       </div>
 
                       <div className="flex-1 flex flex-col justify-center space-y-3 py-1 no-scrollbar">
@@ -852,8 +852,8 @@ export default function App() {
                             key={item.key}
                             className={`w-full px-5 py-4 rounded-full flex items-center justify-between shadow-md ${item.bg}`}
                           >
-                            <span className="text-xl font-black tracking-tight">{item.label}</span>
-                            <span className="text-2xl font-mono font-black">{item.count}</span>
+                            <span className="text-2xl font-black tracking-tight">{item.label}</span>
+                            <span className="text-4xl font-mono font-black">{item.count}</span>
                           </div>
                         ))}
                       </div>
@@ -934,26 +934,26 @@ export default function App() {
                     </button>
 
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-slate-50 border border-zinc-200 rounded-xl p-2.5 text-center">
-                        <div className="text-[10px] text-slate-500 font-bold">TOTAL</div>
-                        <div className="text-2xl font-black text-slate-900 mt-0.5">
+                      <div className="bg-slate-50 border border-zinc-200 rounded-xl p-3 text-center">
+                        <div className="text-xs text-slate-500 font-bold">TOTAL</div>
+                        <div className="text-3xl font-black text-slate-900 mt-0.5">
                           {Object.values(strokeCounts).reduce((a, b) => a + b, 0)}
                         </div>
                       </div>
-                      <div className="bg-slate-50 border border-zinc-200 rounded-xl p-2.5 text-center">
-                        <div className="text-[10px] text-slate-500 font-bold">FOREHAND</div>
-                        <div className="text-2xl font-black text-emerald-600 mt-0.5">{strokeCounts.Forehand}</div>
+                      <div className="bg-slate-50 border border-zinc-200 rounded-xl p-3 text-center">
+                        <div className="text-xs text-slate-500 font-bold">FOREHAND</div>
+                        <div className="text-3xl font-black text-emerald-600 mt-0.5">{strokeCounts.Forehand}</div>
                       </div>
-                      <div className="bg-slate-50 border border-zinc-200 rounded-xl p-2.5 text-center">
-                        <div className="text-[10px] text-slate-500 font-bold">SAQUE</div>
-                        <div className="text-2xl font-black text-orange-600 mt-0.5">{strokeCounts.Saque}</div>
+                      <div className="bg-slate-50 border border-zinc-200 rounded-xl p-3 text-center">
+                        <div className="text-xs text-slate-500 font-bold">SAQUE</div>
+                        <div className="text-3xl font-black text-orange-600 mt-0.5">{strokeCounts.Saque}</div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <div className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
+                      <div className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
                         <span>Capturas Recentes</span>
-                        <span className="text-[11px] text-emerald-600 font-bold">WCSession</span>
+                        <span className="text-xs text-emerald-600 font-bold">WCSession</span>
                       </div>
 
                       <div className="space-y-2 no-scrollbar">
@@ -966,12 +966,12 @@ export default function App() {
                                 className="w-full p-3 flex items-center justify-between bg-slate-100/90 hover:bg-slate-100 text-left transition-all"
                               >
                                 <div className="flex items-center space-x-2.5">
-                                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-700 flex items-center justify-center font-black text-xs shrink-0">
+                                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-700 flex items-center justify-center font-black text-sm shrink-0">
                                     {group.captures.length}
                                   </div>
                                   <div>
-                                    <div className="text-xs font-black text-slate-900">{group.groupTitle}</div>
-                                    <div className="text-[10px] text-slate-500 font-mono">
+                                    <div className="text-sm font-black text-slate-900">{group.groupTitle}</div>
+                                    <div className="text-xs text-slate-500 font-mono">
                                       {new Date(group.startTime).toLocaleString()} • Toque para colapsar
                                     </div>
                                   </div>
